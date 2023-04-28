@@ -5,8 +5,9 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-np.random.seed(0)
+img2mse = lambda x, y : torch.mean((x - y) ** 2)
+mse2psnr = lambda x : -10. * torch.log(x) / torch.log(torch.Tensor([10.]))
+to8b = lambda x : (255*np.clip(x,0,1)).astype(np.uint8)
 
 def get_embedder(i=0):
     if i == -1:
@@ -38,11 +39,26 @@ def run_network(inputs, fn, embed_fn, netchunk=1024*64):
     outputs = torch.reshape(outputs_flat, list(inputs.shape[:-1]) + [outputs_flat.shape[-1]])
     return outputs
 
-
-def network_query_fn(inputs, model):
+def create_nerf(device):
     embed_fn, input_ch = get_embedder(general_kwargs['multires'], general_kwargs['i_embed'])
+    output_ch = 3 # RGB at given (x,y,t)
+    skips = [4]
 
     model = NeRF(D=general_kwargs['D'], W=general_kwargs['W'],
-                 input_ch=input_ch, output_ch=3, skips=[4]).to(device)
-    
-    return run_network(inputs, model, embed_fn)
+                 input_ch=input_ch, output_ch=output_ch, skips=skips).to(device)
+    grad_vars = list(model.parameters())
+
+    network_query_fn = lambda inputs, network_fn : run_network(inputs, network_fn,
+                                                                embed_fn=embed_fn,
+                                                                netchunk=1024*64)
+    optimizer = torch.optim.Adam(params=grad_vars, lr=general_kwargs['lrate'], betas=(0.9, 0.999))
+
+    render_kwargs_train = {
+        'network_query_fn' : network_query_fn,
+        'network_fn' : model,
+        'optimizer': optimizer,
+        'grad_vars': grad_vars,
+    }
+
+    return render_kwargs_train
+
