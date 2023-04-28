@@ -5,6 +5,8 @@ general_kwargs = {
     'i_embed': 0,
     'D': 8,
     'W': 256,
+    'epochs': 1000,
+    'lrate': 0.0005
 }
 
 embed_kwargs = {
