@@ -69,7 +69,9 @@ def construct_images_with_model(model, save_path, dataset_path):
                     # get pixel color from model
                     pixel_color = model(torch.Tensor([x, y, frame]))
                     # set pixel color in real image
-                    generated_image.putpixel((x, y), tuple(pixel_color))
+                    r, g, b = tuple(pixel_color)
+                    r, g, b = int(r * 255), int(g * 255), int(b * 255)
+                    generated_image.putpixel((x, y), (r, g, b))
             
             # model generated image
             generated_image.save(f'{save_path}/frame_{frame}_generated.png')
