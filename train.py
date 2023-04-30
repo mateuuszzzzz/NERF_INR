@@ -26,7 +26,7 @@ def train_loop():
 
     val_imgs_folder = os.path.join(dataset_path, 'val')
     val_dataset = PixelDataset(val_imgs_folder)
-    val_dataloader = PixelDataLoader(val_dataset, batch_size=10, shuffle=True, num_workers=4)
+    val_dataloader = PixelDataLoader(val_dataset, batch_size=100, shuffle=True, num_workers=4)
 
     for epoch in range(general_kwargs['epochs']):
 
